@@ -40,7 +40,7 @@ def _run_feature_selection(train):
     nth_feature = min([y for (x,y) in zip(gt_999_importance, zip(range(len(gt_999_importance)))) if x])[0]
     important_columns = sorted_feature_importance.iloc[0:nth_feature+1].index.values.tolist()
     important_columns
-    return important_columns
+    return important_columns, shap_values
 
 
 class DataFrameSelector(BaseEstimator, TransformerMixin):
