@@ -7,10 +7,11 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, \
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
+import matplotlib.pyplot as plt
 warnings.filterwarnings("ignore")
 
 # Not used in this project
-def _run_feature_selection(train):
+def run_feature_selection(train):
     import shap
     import pandas as pd
     from numpy import cumsum
@@ -18,17 +19,15 @@ def _run_feature_selection(train):
 
     seed(40)
 
-    train.fillna(0, inplace=True)
-
     # X and y
     X = train.drop(["target"], axis=1)
     y = train[["target"]]
 
     # lightgbm for large number of columns
-    # import lightgbm as lgb; clf = lgb.LGBMClassifier()
+    import lightgbm as lgb; clf = lgb.LGBMClassifier()
 
     # Fit xgboost
-    clf = XGBClassifier()
+    # clf = XGBClassifier()
     clf.fit(X, y)
 
     # shap values
@@ -39,8 +38,10 @@ def _run_feature_selection(train):
     gt_999_importance = cumulative_sum / cumulative_sum[-1] > .999
     nth_feature = min([y for (x,y) in zip(gt_999_importance, zip(range(len(gt_999_importance)))) if x])[0]
     important_columns = sorted_feature_importance.iloc[0:nth_feature+1].index.values.tolist()
-    important_columns
-    return important_columns, shap_values
+    print(important_columns)
+
+    plt.clf()
+    shap.summary_plot(shap_values, X[0:10000])
 
 
 class DataFrameSelector(BaseEstimator, TransformerMixin):
