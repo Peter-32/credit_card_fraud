@@ -8,6 +8,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import KBinsDiscretizer
 warnings.filterwarnings("ignore")
 
 # Not used in this project
@@ -52,18 +53,54 @@ class DataFrameSelector(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         return X[self.attribute_names].values
 
+class AggByAmount(BaseEstimator, TransformerMixin):
+    # Inputs: bins, encode, strategy ('uniform', 'quantile', 'kmeans'), number of top features, mean/max/min
+    # Top features order: ['v1', 'v4', 'v10', 'v7', 'v18', 'v11', 'v20', 'amount', 'v3', 'v16', 'v13', 'v14', 'v8', 'v9', 'v19', 'v2', 'v5', 'v12', 'v26', 'v24', 'v25', 'v27', 'v17', 'v22', 'v23', 'v6', 'v15', 'v21']
+    def __init__(self, n_bins=2, strategy='quantile', columns_to_agg=['v1']):
+        self.n_bins = n_bins
+        self.strategy = strategy
+        self.columns_to_agg = columns_to_agg
+        self.kbins = None
+        self.initial_columns = None
+        self.agg_values = None
+    def fit(self, X, y=None):
+        self.kbins = KBinsDiscretizer(n_bins=self.n_bins, encode='ordinal', strategy=self.strategy)
+        self.kbins.fit(X[['amount']].values)
+        self.initial_columns = list(X.columns)
+        X['amount_discretized'] = self.kbins.transform(X[['amount']].values)
+        self.agg_values = X.groupby(by=['amount_discretized']).max()
+        self.agg_values = self.agg_values[self.columns_to_agg]
+        self.agg_values.columns = [x + "_mean_given_amount" for x in self.agg_values.columns]
+        return self
+    def transform(self, X, y=None):
+        X['amount_discretized'] = self.kbins.transform(X[['amount']].values)
+        X = X.merge(self.agg_values, how='left', on=['amount_discretized'])
+        X.drop(self.initial_columns + ['amount_discretized'], axis=1, inplace=True)
+        return X
+
 def data_preparation():
     # Extract
     train = read_csv("../../data/interim/train.csv", nrows=250)
 
     # Get column names by datatype
     num_attribs = train.drop(["target"], axis=1).columns
+    print(num_attribs)
 
     # Numeric pipeline
-    features_pipeline = Pipeline([
+    num_pipeline = Pipeline([
         ('selector', DataFrameSelector(num_attribs)),
         # ('std_scaler', StandardScaler()),
         # ('minmax_scaler', MinMaxScaler()),
+    ])
+
+    agg_pipeline = Pipeline([
+        ('agg_by_amount', AggByAmount()),
+    ])
+
+    # Combine pipelines
+    features_pipeline = FeatureUnion(transformer_list=[
+        ("num_pipeline", num_pipeline),
+        ("agg_pipeline", agg_pipeline),
     ])
 
     # Return pipeline

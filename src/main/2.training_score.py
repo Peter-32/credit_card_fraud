@@ -56,7 +56,7 @@ if SHOW_ERROR_ANALYSIS:
     train["prob_y"] = prob_y
     prob_y_threshold = (list(thresholds) + [1.1])[precision_threshold_index]
     pred_y = (prob_y >= prob_y_threshold).astype(bool)
-    print("Prob y Threshold: %.8f" % (prob_y_threshold*100))
+    print("Prob y Threshold: %.10f" % (prob_y_threshold*100))
     print(confusion_matrix(train_y, pred_y))
     print("Recall: %.1f" % (recall_score(train_y, pred_y)*100))
     print("Precision: %.1f" % (precision_score(train_y, pred_y)*100))
