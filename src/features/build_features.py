@@ -68,7 +68,7 @@ class AggByAmount(BaseEstimator, TransformerMixin):
         self.kbins.fit(X[['amount']].values)
         self.initial_columns = list(X.columns)
         X['amount_discretized'] = self.kbins.transform(X[['amount']].values)
-        self.agg_values = X.groupby(by=['amount_discretized']).max()
+        self.agg_values = X.groupby(by=['amount_discretized']).mean()
         self.agg_values = self.agg_values[self.columns_to_agg]
         self.agg_values.columns = [x + "_mean_given_amount" for x in self.agg_values.columns]
         return self
