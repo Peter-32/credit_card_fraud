@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import KBinsDiscretizer
 warnings.filterwarnings("ignore")
 
-# Not used in this project
 def run_feature_selection(train):
     import shap
     import pandas as pd
